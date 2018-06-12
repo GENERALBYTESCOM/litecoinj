@@ -15,15 +15,25 @@
  */
 
 package org.litecoinj.core;
+import org.litecoinj.script.ScriptError;
+
 
 @SuppressWarnings("serial")
 public class ScriptException extends VerificationException {
 
-    public ScriptException(String msg) {
+    private final ScriptError err;
+
+    public ScriptException(ScriptError err, String msg) {
         super(msg);
+        this.err = err;
     }
 
-    public ScriptException(String msg, Exception e) {
+    public ScriptException(ScriptError err, String msg, Exception e) {
         super(msg, e);
+        this.err = err;
+    }
+
+    public ScriptError getError() {
+        return err;
     }
 }

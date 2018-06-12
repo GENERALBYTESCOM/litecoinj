@@ -21,12 +21,15 @@ import org.litecoinj.core.TransactionConfidence.ConfidenceType;
 import org.litecoinj.crypto.TransactionSignature;
 import org.litecoinj.script.Script;
 import org.litecoinj.script.ScriptBuilder;
+import org.litecoinj.script.ScriptError;
+import org.litecoinj.script.ScriptException;
 import org.litecoinj.script.ScriptOpCodes;
 import org.litecoinj.signers.TransactionSigner;
 import org.litecoinj.utils.ExchangeRate;
 import org.litecoinj.wallet.Wallet;
 import org.litecoinj.wallet.WalletTransaction.Pool;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
@@ -78,8 +81,12 @@ public class Transaction extends ChildMessage {
     public static final Comparator<Transaction> SORT_TX_BY_HEIGHT = new Comparator<Transaction>() {
         @Override
         public int compare(final Transaction tx1, final Transaction tx2) {
-            final int height1 = tx1.getConfidence().getAppearedAtChainHeight();
-            final int height2 = tx2.getConfidence().getAppearedAtChainHeight();
+            final TransactionConfidence confidence1 = tx1.getConfidence();
+            final int height1 = confidence1.getConfidenceType() == ConfidenceType.BUILDING
+                    ? confidence1.getAppearedAtChainHeight() : Block.BLOCK_HEIGHT_UNKNOWN;
+            final TransactionConfidence confidence2 = tx2.getConfidence();
+            final int height2 = confidence2.getConfidenceType() == ConfidenceType.BUILDING
+                    ? confidence2.getAppearedAtChainHeight() : Block.BLOCK_HEIGHT_UNKNOWN;
             final int heightComparison = -(Ints.compare(height1, height2));
             //If height1==height2, compare by tx hash to make comparator consistent with equals
             return heightComparison != 0 ? heightComparison : tx1.getHash().compareTo(tx2.getHash());
@@ -415,6 +422,8 @@ public class Transaction extends ChildMessage {
      */
     public Coin getFee() {
         Coin fee = Coin.ZERO;
+        if (inputs.isEmpty() || outputs.isEmpty()) // Incomplete transaction
+            return null;
         for (TransactionInput input : inputs) {
             if (input.getValue() == null)
                 return null;
@@ -653,6 +662,9 @@ public class Transaction extends ChildMessage {
             }
             s.append('\n');
         }
+        if (hasRelativeLockTime()) {
+            s.append("  has relative lock time\n");
+        }
         if (isOptInFullRBF()) {
             s.append("  opts into full replace-by-fee\n");
         }
@@ -752,8 +764,8 @@ public class Transaction extends ChildMessage {
 
     /**
      * Adds an input to this transaction that imports value from the given output. Note that this input is <i>not</i>
-     * complete and after every input is added with {@link #addInput()} and every output is added with
-     * {@link #addOutput()}, a {@link TransactionSigner} must be used to finalize the transaction and finish the inputs
+     * complete and after every input is added with {@link #addInput(TransactionInput)} and every output is added with
+     * {@link #addOutput(TransactionOutput)}, a {@link TransactionSigner} must be used to finalize the transaction and finish the inputs
      * off. Otherwise it won't be accepted by the network.
      * @return the newly created input.
      */
@@ -803,7 +815,7 @@ public class Transaction extends ChildMessage {
         else if (scriptPubKey.isSentToAddress())
             input.setScriptSig(ScriptBuilder.createInputScript(txSig, sigKey));
         else
-            throw new ScriptException("Don't know how to sign for this kind of scriptPubKey: " + scriptPubKey);
+            throw new ScriptException(ScriptError.SCRIPT_ERR_UNKNOWN_ERROR, "Don't know how to sign for this kind of scriptPubKey: " + scriptPubKey);
         return input;
     }
 
@@ -1333,6 +1345,20 @@ public class Transaction extends ChildMessage {
             return false;
         for (TransactionInput input : getInputs())
             if (input.hasSequence())
+                return true;
+        return false;
+    }
+
+    /**
+     * A transaction has a relative lock time
+     * (<a href="https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki">BIP 68</a>) if it is version 2 or
+     * higher and at least one of its inputs has its {@link TransactionInput.SEQUENCE_LOCKTIME_DISABLE_FLAG} cleared.
+     */
+    public boolean hasRelativeLockTime() {
+        if (version < 2)
+            return false;
+        for (TransactionInput input : getInputs())
+            if (input.hasRelativeLockTime())
                 return true;
         return false;
     }

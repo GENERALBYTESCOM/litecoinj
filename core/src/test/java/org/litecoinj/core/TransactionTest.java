@@ -77,13 +77,13 @@ public class TransactionTest {
     }
 
     @Test(expected = VerificationException.NegativeValueOutput.class)
-    public void negativeOutput() throws Exception {
+    public void negativeOutput() throws ScriptException {
         tx.getOutput(0).setValue(Coin.NEGATIVE_SATOSHI);
         tx.verify();
     }
 
     @Test(expected = VerificationException.ExcessiveValue.class)
-    public void exceedsMaxMoney2() throws Exception {
+    public void exceedsMaxMoney2() throws ScriptException {
         Coin half = PARAMS.getMaxMoney().divide(2).add(Coin.SATOSHI);
         tx.getOutput(0).setValue(half);
         tx.addOutput(half, ADDRESS);
@@ -91,20 +91,20 @@ public class TransactionTest {
     }
 
     @Test(expected = VerificationException.UnexpectedCoinbaseInput.class)
-    public void coinbaseInputInNonCoinbaseTX() throws Exception {
+    public void coinbaseInputInNonCoinbaseTX() throws ScriptException {
         tx.addInput(Sha256Hash.ZERO_HASH, 0xFFFFFFFFL, new ScriptBuilder().data(new byte[10]).build());
         tx.verify();
     }
 
     @Test(expected = VerificationException.CoinbaseScriptSizeOutOfRange.class)
-    public void coinbaseScriptSigTooSmall() throws Exception {
+    public void coinbaseScriptSigTooSmall() throws ScriptException {
         tx.clearInputs();
         tx.addInput(Sha256Hash.ZERO_HASH, 0xFFFFFFFFL, new ScriptBuilder().build());
         tx.verify();
     }
 
     @Test(expected = VerificationException.CoinbaseScriptSizeOutOfRange.class)
-    public void coinbaseScriptSigTooLarge() throws Exception {
+    public void coinbaseScriptSigTooLarge() throws ScriptException {
         tx.clearInputs();
         TransactionInput input = tx.addInput(Sha256Hash.ZERO_HASH, 0xFFFFFFFFL, new ScriptBuilder().data(new byte[99]).build());
         assertEquals(101, input.getScriptBytes().length);
