@@ -608,7 +608,8 @@ public class Transaction extends ChildMessage {
         version = readUint32();
         // peek at marker
         byte marker = payload[cursor];
-        boolean useSegwit = marker == 0;
+        byte flag = payload[cursor + 1];
+        boolean useSegwit = (marker == 0 && flag != 0);
         // marker, flag
         if (useSegwit) {
             readBytes(2);
@@ -619,13 +620,36 @@ public class Transaction extends ChildMessage {
         // txout_count, txouts
         parseOutputs();
         // script_witnesses
-        if (useSegwit)
-            parseWitnesses();
+        if (useSegwit) {
+            // Only call standard witness parsing if the flag is 0x01
+            if (flag == 1) {
+                parseWitnesses();
+            }
+            // If flag is 0x08, it's a HogEx/MWEB transaction.
+            else if (flag == 8) {
+                skipMwebData();
+            }
+        }
         // lock_time
         lockTime = readUint32();
         optimalEncodingMessageSize += 4;
 
         length = cursor - offset;
+    }
+
+    private void skipMwebData() {
+        log.warn("HogEx transaction detected hash: {}, skipping MWEB data", getTxId());
+        try {
+            long mwebPayloadSize = readVarInt();
+            optimalEncodingMessageSize += VarInt.sizeOf(mwebPayloadSize);
+
+            if (mwebPayloadSize > 0) {
+                readBytes((int) mwebPayloadSize);
+                optimalEncodingMessageSize += (int) mwebPayloadSize;
+            }
+        } catch (Exception e) {
+            log.error("MWEB skip logic encountered alignment issue.", e);
+        }
     }
 
     private void parseInputs() {
