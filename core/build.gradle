@@ -4,7 +4,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'eclipse'
 
-version = '0.15.1.20190418'
+version = '0.15.1.20260110'
 archivesBaseName = 'litecoinj-core'
 eclipse.project.name = 'litecoinj-core'
 
