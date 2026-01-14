@@ -638,17 +638,17 @@ public class Transaction extends ChildMessage {
     }
 
     private void skipMwebData() {
-        log.warn("HogEx transaction detected hash: {}, skipping MWEB data", getTxId());
         try {
             long mwebPayloadSize = readVarInt();
             optimalEncodingMessageSize += VarInt.sizeOf(mwebPayloadSize);
 
             if (mwebPayloadSize > 0) {
+                log.warn("MWEB payload detected hash: {}, skipping {} bytes", getTxId(), mwebPayloadSize);
                 readBytes((int) mwebPayloadSize);
                 optimalEncodingMessageSize += (int) mwebPayloadSize;
             }
         } catch (Exception e) {
-            log.error("MWEB skip logic encountered alignment issue.", e);
+            log.error("MWEB skip logic encountered alignment issue for hash: {}.", getTxId(), e);
         }
     }
 
