@@ -17,10 +17,10 @@ buildscript {
 }
 
 dependencies {
-    compile 'org.bouncycastle:bcprov-jdk15on:1.60'
+    implementation 'org.bouncycastle:bcprov-jdk15to18:1.73'
     implementation 'com.lambdaworks:scrypt:1.4.0'
     implementation 'com.google.guava:guava:27.0.1-android'
-    compile 'com.google.protobuf:protobuf-java:3.6.1'
+    implementation 'com.google.protobuf:protobuf-java:3.6.1'
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
     implementation 'org.slf4j:slf4j-api:1.7.25'
     implementation 'net.jcip:jcip-annotations:1.0'
