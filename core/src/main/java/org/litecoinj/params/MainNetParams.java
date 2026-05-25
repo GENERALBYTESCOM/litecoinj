@@ -89,7 +89,9 @@ public class MainNetParams extends AbstractBitcoinNetParams {
                 "dnsseed.litecointools.com",
                 "dnsseed.litecoinpool.org",
                 "dnsseed.koin-project.com",
-                "dnsseed.weminemnc.com"
+                "dnsseed.weminemnc.com",
+                "seed-a.litecoin.loshan.co.uk",
+                "dnsseed.thrasher.io"
         };
         httpSeeds = new HttpDiscovery.Details[] {
                 // Andreas Schildbach
